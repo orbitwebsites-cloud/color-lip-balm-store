@@ -76,6 +76,7 @@ module.exports = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items,
+      metadata: { cart: JSON.stringify(items) }, // read by webhook.js for CJ fulfillment
       shipping_address_collection: {
         allowed_countries: ["US", "CA", "GB", "AU", "IE", "NZ"],
       },
