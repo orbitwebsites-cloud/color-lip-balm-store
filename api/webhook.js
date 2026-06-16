@@ -25,14 +25,16 @@ const CJ_PRODUCTS = {
 
 // ── CJ Dropshipping helpers ───────────────────────────────────────────────────
 
+// CJ API key auth — uses the key from your CJ account API settings.
+// Set CJ_API_KEY in Vercel environment variables. Never hardcode it here.
 async function getCJToken() {
+  const apiKey = process.env.CJ_API_KEY;
+  if (!apiKey) throw new Error("CJ_API_KEY environment variable is not set");
+
   const res = await fetch("https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: process.env.CJ_EMAIL,
-      password: process.env.CJ_API_PASSWORD,
-    }),
+    body: JSON.stringify({ apiKey }),
   });
   const data = await res.json();
   if (!data.result || !data.data?.accessToken) {
