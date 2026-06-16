@@ -1,36 +1,22 @@
 // Stripe webhook → CJ Dropshipping auto-fulfillment
-// Vercel calls this at POST /api/webhook when Stripe fires an event.
+// POST /api/webhook — called by Stripe on checkout.session.completed
 // Stripe signature verification ensures ONLY Stripe can trigger orders.
 
 const Stripe = require("stripe");
 
-// Maps your product IDs (from app.js) to CJ Dropshipping product/variant IDs.
-// Fill these in from your CJ Dropshipping product listings.
-// CJ product page URL looks like: https://cjdropshipping.com/product/xxx.html
-// The vid (variant ID) is found under each size/color option on the CJ listing.
-const CJ_PRODUCTS = {
-  rosewood:      { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  "coral-crush": { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  honey:         { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  lavender:      { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  cherry:        { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  mint:          { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  sky:           { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  cocoa:         { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  bubblegum:     { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  plum:          { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  tangerine:     { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
-  midnight:      { pid: "TODO_CJ_PRODUCT_ID", vid: "TODO_CJ_VARIANT_ID" },
+// Maps your store's product IDs to CJ product IDs (pid).
+// To add more products: find the CJ product page, grab the ID from the URL.
+const CJ_CATALOG = {
+  "women-dress": { pid: "1705465925572497408", name: "Loose Linen Midi Dress" },
+  "men-cargo":   { pid: "1670981011842273280", name: "Streetwear Cargo Pants" },
+  "ems-tool":    { pid: "1914884885643104257", name: "EMS Facial Beauty Tool" },
 };
 
-// ── CJ Dropshipping helpers ───────────────────────────────────────────────────
+// ── CJ API helpers ────────────────────────────────────────────────────────────
 
-// CJ API key auth — uses the key from your CJ account API settings.
-// Set CJ_API_KEY in Vercel environment variables. Never hardcode it here.
 async function getCJToken() {
   const apiKey = process.env.CJ_API_KEY;
-  if (!apiKey) throw new Error("CJ_API_KEY environment variable is not set");
-
+  if (!apiKey) throw new Error("CJ_API_KEY is not set");
   const res = await fetch("https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -38,16 +24,50 @@ async function getCJToken() {
   });
   const data = await res.json();
   if (!data.result || !data.data?.accessToken) {
-    throw new Error(`CJ auth failed: ${data.message || JSON.stringify(data)}`);
+    throw new Error(`CJ auth failed: ${data.message}`);
   }
   return data.data.accessToken;
 }
 
-async function placeCJOrder(token, { customerName, address, items }) {
-  // Build the order payload CJ expects.
-  // Docs: https://developers.cjdropshipping.com/api-doc.html#/Order%20Management/createOrder
-  const orderPayload = {
-    orderNumber: `COLOR-${Date.now()}`,
+// Fetches all variants for a CJ product and returns the vid matching color+size.
+async function getCJVariantId(token, pid, color, size) {
+  const res = await fetch(
+    `https://developers.cjdropshipping.com/api2.0/v1/shopping/product/queryByPid?pid=${pid}`,
+    { headers: { "CJ-Access-Token": token } }
+  );
+  const data = await res.json();
+  if (!data.result || !data.data?.variants) {
+    throw new Error(`CJ product lookup failed for pid ${pid}: ${data.message}`);
+  }
+
+  const variants = data.data.variants;
+
+  // Find the variant whose properties match the selected color and size.
+  // If no size (beauty/one-size products), match by color only.
+  const match = variants.find((v) => {
+    const props = v.variantProperty || [];
+    const colorMatch = !color || props.some(
+      (p) => p.propertyNameEn?.toLowerCase() === "color" &&
+             p.propertyValueEn?.toLowerCase() === color.toLowerCase()
+    );
+    const sizeMatch = !size || size === "_" || props.some(
+      (p) => p.propertyNameEn?.toLowerCase() === "size" &&
+             p.propertyValueEn?.toLowerCase() === size.toLowerCase()
+    );
+    return colorMatch && sizeMatch;
+  });
+
+  // Fall back to first available variant if exact match not found
+  if (!match) {
+    console.warn(`No exact variant match for pid=${pid} color=${color} size=${size} — using first variant`);
+    return variants[0]?.vid;
+  }
+  return match.vid;
+}
+
+async function placeCJOrder(token, { orderNumber, customerName, address, items }) {
+  const payload = {
+    orderNumber,
     shippingZip: address.postal_code,
     shippingCountryCode: address.country,
     shippingCountry: address.country,
@@ -56,27 +76,18 @@ async function placeCJOrder(token, { customerName, address, items }) {
     shippingAddress: address.line1,
     shippingAddress2: address.line2 || "",
     shippingCustomerName: customerName,
-    shippingPhone: "", // Stripe doesn't collect phone by default; add phone_number_collection in checkout if needed
-    products: items.map((item) => ({
-      vid: item.vid,
-      quantity: item.quantity,
-    })),
+    shippingPhone: "",
+    products: items.map((item) => ({ vid: item.vid, quantity: item.quantity })),
   };
 
   const res = await fetch("https://developers.cjdropshipping.com/api2.0/v1/shopping/order/createOrder", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "CJ-Access-Token": token,
-    },
-    body: JSON.stringify(orderPayload),
+    headers: { "Content-Type": "application/json", "CJ-Access-Token": token },
+    body: JSON.stringify(payload),
   });
-
   const data = await res.json();
-  if (!data.result) {
-    throw new Error(`CJ order failed: ${data.message || JSON.stringify(data)}`);
-  }
-  return data.data; // { orderId, orderNum, ... }
+  if (!data.result) throw new Error(`CJ order failed: ${data.message}`);
+  return data.data;
 }
 
 // ── Webhook handler ───────────────────────────────────────────────────────────
@@ -89,23 +100,17 @@ module.exports = async (req, res) => {
 
   const sig = req.headers["stripe-signature"];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    console.error("STRIPE_WEBHOOK_SECRET is not set");
-    return res.status(500).end("Webhook secret not configured");
-  }
+  if (!webhookSecret) return res.status(500).end("STRIPE_WEBHOOK_SECRET not set");
 
   let event;
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    // req.body is a raw Buffer here (bodyParser disabled in vercel.json for this route)
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
-    console.error("Webhook signature verification failed:", err.message);
+    console.error("Webhook signature failed:", err.message);
     return res.status(400).end(`Webhook Error: ${err.message}`);
   }
 
-  // Only act on completed checkouts
   if (event.type !== "checkout.session.completed") {
     return res.status(200).json({ received: true, skipped: event.type });
   }
@@ -114,66 +119,56 @@ module.exports = async (req, res) => {
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const full = await stripe.checkout.sessions.retrieve(session.id, { expand: ["line_items"] });
 
-    // Retrieve the full session with line items and shipping details
-    const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-      expand: ["line_items"],
-    });
-
-    const shipping = fullSession.shipping_details;
-    const customerName = shipping?.name || fullSession.customer_details?.name || "Customer";
+    const shipping = full.shipping_details;
+    const customerName = shipping?.name || full.customer_details?.name || "Customer";
     const address = shipping?.address;
-
     if (!address) {
       console.error("No shipping address on session:", session.id);
       return res.status(200).json({ received: true, error: "No shipping address" });
     }
 
-    // Map Stripe line items back to CJ product IDs using the session metadata.
-    // Because Stripe line items only have display names, we embed the product IDs
-    // in the session metadata via checkout.js (see note below — update checkout.js too).
-    // Fallback: parse from the item name if metadata isn't set yet.
-    const rawItems = fullSession.metadata?.cart
-      ? JSON.parse(fullSession.metadata.cart)
-      : null;
-
-    if (!rawItems) {
-      console.error("No cart metadata on session:", session.id, "— update api/checkout.js to pass metadata");
-      return res.status(200).json({ received: true, error: "Missing cart metadata — see README" });
-    }
-
-    const cjItems = Object.entries(rawItems)
-      .map(([productId, quantity]) => {
-        const cj = CJ_PRODUCTS[productId];
-        if (!cj || cj.vid === "TODO_CJ_VARIANT_ID") {
-          console.warn(`No CJ mapping for product: ${productId} — skipping`);
-          return null;
-        }
-        return { vid: cj.vid, quantity: parseInt(quantity, 10) };
-      })
-      .filter(Boolean);
-
-    if (cjItems.length === 0) {
-      console.error("No CJ-mappable items in order. Fill in CJ_PRODUCTS in api/webhook.js");
-      return res.status(200).json({ received: true, error: "No CJ product IDs mapped yet" });
+    const rawCart = full.metadata?.cart ? JSON.parse(full.metadata.cart) : null;
+    if (!rawCart) {
+      console.error("No cart metadata on session:", session.id);
+      return res.status(200).json({ received: true, error: "Missing cart metadata" });
     }
 
     const token = await getCJToken();
+
+    // Resolve each cart item to a CJ variant ID
+    const cjItems = [];
+    for (const [cartKey, qty] of Object.entries(rawCart)) {
+      const [productId, color, size] = cartKey.split("::");
+      const cjProduct = CJ_CATALOG[productId];
+      if (!cjProduct) {
+        console.warn(`No CJ mapping for product: ${productId}`);
+        continue;
+      }
+      const vid = await getCJVariantId(token, cjProduct.pid, color, size);
+      if (!vid) { console.warn(`No variant found for ${productId} ${color} ${size}`); continue; }
+      cjItems.push({ vid, quantity: parseInt(qty, 10) });
+    }
+
+    if (cjItems.length === 0) {
+      return res.status(200).json({ received: true, error: "No CJ items resolved" });
+    }
+
     const cjOrder = await placeCJOrder(token, {
+      orderNumber: `DRIP-${session.id.slice(-8).toUpperCase()}`,
       customerName,
       address,
       items: cjItems,
     });
 
-    console.log("✅ CJ order placed:", cjOrder.orderId, "for Stripe session:", session.id);
+    console.log(`✅ CJ order ${cjOrder.orderId} placed for Stripe session ${session.id}`);
     return res.status(200).json({ received: true, cjOrderId: cjOrder.orderId });
 
   } catch (err) {
-    console.error("Auto-fulfillment error:", err.message);
-    // Still return 200 so Stripe doesn't retry — log and investigate manually
+    console.error("Fulfillment error:", err.message);
     return res.status(200).json({ received: true, error: err.message });
   }
 };
 
-// Disable body parsing so Stripe signature verification gets the raw bytes
 module.exports.config = { api: { bodyParser: false } };

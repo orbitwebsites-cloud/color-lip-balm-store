@@ -5,26 +5,17 @@
 
 const Stripe = require("stripe");
 
-// Authoritative price list. The browser only sends product IDs + quantities —
-// we look up the real price here so it can't be tampered with client-side.
-// Prices are in cents (USD). Keep names/prices in sync with app.js.
+// Authoritative price list. Cart keys are "productId::color::size" — we parse
+// the productId prefix and look up price here so it can't be tampered client-side.
+// Prices in cents (USD). Keep in sync with app.js PRODUCTS.
 const CATALOG = {
-  rosewood:    { name: "Rosewood lip balm",    amount: 900 },
-  "coral-crush": { name: "Coral Crush lip balm", amount: 900 },
-  honey:       { name: "Honey lip balm",       amount: 800 },
-  lavender:    { name: "Lavender lip balm",    amount: 1000 },
-  cherry:      { name: "Cherry lip balm",      amount: 900 },
-  mint:        { name: "Mint lip balm",        amount: 800 },
-  sky:         { name: "Sky lip balm",         amount: 1000 },
-  cocoa:       { name: "Cocoa lip balm",       amount: 900 },
-  bubblegum:   { name: "Bubblegum lip balm",   amount: 800 },
-  plum:        { name: "Plum lip balm",        amount: 1000 },
-  tangerine:   { name: "Tangerine lip balm",   amount: 900 },
-  midnight:    { name: "Midnight lip balm",    amount: 1100 },
+  "women-dress": { name: "Loose Linen Midi Dress",    amount: 2999 },
+  "men-cargo":   { name: "Streetwear Cargo Pants",    amount: 3499 },
+  "ems-tool":    { name: "EMS Facial Beauty Tool",    amount: 5999 },
 };
 
-const FREE_SHIP_THRESHOLD = 2500; // $25.00 in cents
-const STANDARD_SHIPPING = 499;    // $4.99 in cents
+const FREE_SHIP_THRESHOLD = 5000; // $50.00 in cents
+const STANDARD_SHIPPING = 599;    // $5.99 in cents
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
@@ -44,16 +35,20 @@ module.exports = async (req, res) => {
     const items = (req.body && req.body.items) || {};
 
     const line_items = Object.entries(items)
-      .map(([id, qty]) => {
-        const product = CATALOG[id];
+      .map(([cartKey, qty]) => {
+        // cartKey format: "productId::color::size"
+        const productId = cartKey.split("::")[0];
+        const product = CATALOG[productId];
         const quantity = parseInt(qty, 10);
         if (!product || !quantity || quantity < 1) return null;
+        const [, color, size] = cartKey.split("::");
+        const variantLabel = [color, size && size !== "_" ? size : null].filter(Boolean).join(" / ");
         return {
           quantity: Math.min(quantity, 99),
           price_data: {
             currency: "usd",
             unit_amount: product.amount,
-            product_data: { name: product.name },
+            product_data: { name: variantLabel ? `${product.name} — ${variantLabel}` : product.name },
           },
         };
       })

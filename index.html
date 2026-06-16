@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>color — lip balm in every shade</title>
-  <meta name="description" content="color makes tinted lip balm in every shade you can dream of. Nourishing, vegan, and ridiculously buildable." />
+  <title>DRIP — fashion & beauty</title>
+  <meta name="description" content="DRIP carries women's fashion, men's streetwear, and beauty tools. Free shipping on orders over $50." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,17 +14,16 @@
 <body>
   <!-- Announcement bar -->
   <div class="announce">
-    free shipping on orders over $25 ✦ buy 3 get 1 free ✦ new shades just dropped
+    free shipping on orders over $50 ✦ new drops every week ✦ no chinese packaging ever
   </div>
 
   <!-- Header -->
   <header class="header">
-    <a href="#" class="logo" aria-label="color home">
-      <span class="logo-dot"></span>color
+    <a href="#" class="logo" aria-label="DRIP home">
+      <span class="logo-dot"></span>DRIP
     </a>
     <nav class="nav">
       <a href="#shop">Shop</a>
-      <a href="#shades">Shades</a>
       <a href="#about">About</a>
     </nav>
     <button class="cart-btn" id="cartBtn" aria-label="Open cart">
@@ -39,29 +38,29 @@
   <!-- Hero -->
   <section class="hero">
     <div class="hero-text">
-      <p class="eyebrow">tinted lip balm ✦ vegan ✦ buildable</p>
-      <h1>Your lips,<br />but in <span class="rainbow">every color.</span></h1>
+      <p class="eyebrow">women's fashion ✦ men's streetwear ✦ beauty tools</p>
+      <h1>Drip different.<br /><span class="rainbow">Style that hits.</span></h1>
       <p class="hero-sub">
-        Nourishing, never sticky, and packed with pigment. Pick a shade — or
-        collect them all. Made with shea butter, jojoba oil, and zero nonsense.
+        Handpicked fashion and beauty — ships from the US, no Chinese packaging,
+        arrives in 3–8 days. Quality pieces, prices that don't hurt.
       </p>
       <div class="hero-cta">
-        <a href="#shop" class="btn btn-primary">Shop all shades</a>
-        <a href="#about" class="btn btn-ghost">Why color?</a>
+        <a href="#shop" class="btn btn-primary">Shop now</a>
+        <a href="#about" class="btn btn-ghost">Our promise</a>
       </div>
       <div class="hero-stats">
-        <div><strong>50k+</strong><span>five-star reviews</span></div>
-        <div><strong>12</strong><span>signature shades</span></div>
-        <div><strong>100%</strong><span>vegan &amp; cruelty-free</span></div>
+        <div><strong>3–8</strong><span>day delivery</span></div>
+        <div><strong>US</strong><span>warehouse</span></div>
+        <div><strong>$0</strong><span>branding removal</span></div>
       </div>
     </div>
     <div class="hero-art" aria-hidden="true">
       <div class="balm-stack">
-        <div class="balm" style="--c:#ff5d8f"></div>
-        <div class="balm" style="--c:#ff8a5b"></div>
-        <div class="balm" style="--c:#c084fc"></div>
-        <div class="balm" style="--c:#f43f5e"></div>
-        <div class="balm" style="--c:#fbbf24"></div>
+        <div class="balm" style="--c:#1e293b"></div>
+        <div class="balm" style="--c:#4d7c0f"></div>
+        <div class="balm" style="--c:#fb923c"></div>
+        <div class="balm" style="--c:#f9a8d4"></div>
+        <div class="balm" style="--c:#3b82f6"></div>
       </div>
     </div>
   </section>
@@ -69,12 +68,12 @@
   <!-- Trust strip -->
   <section class="marquee" aria-hidden="true">
     <div class="marquee-track">
-      <span>shea butter</span><span>✦</span><span>jojoba oil</span><span>✦</span>
-      <span>vitamin e</span><span>✦</span><span>no parabens</span><span>✦</span>
-      <span>buildable color</span><span>✦</span><span>cruelty-free</span><span>✦</span>
-      <span>shea butter</span><span>✦</span><span>jojoba oil</span><span>✦</span>
-      <span>vitamin e</span><span>✦</span><span>no parabens</span><span>✦</span>
-      <span>buildable color</span><span>✦</span><span>cruelty-free</span><span>✦</span>
+      <span>US warehouse</span><span>✦</span><span>3–8 day delivery</span><span>✦</span>
+      <span>no chinese packaging</span><span>✦</span><span>free returns</span><span>✦</span>
+      <span>women's fashion</span><span>✦</span><span>men's streetwear</span><span>✦</span>
+      <span>US warehouse</span><span>✦</span><span>3–8 day delivery</span><span>✦</span>
+      <span>no chinese packaging</span><span>✦</span><span>free returns</span><span>✦</span>
+      <span>beauty tools</span><span>✦</span><span>free shipping over $50</span><span>✦</span>
     </div>
   </section>
 
@@ -83,10 +82,10 @@
     <section class="shop" id="shop">
       <div class="shop-head">
         <div>
-          <h2 id="shades">Shop the shades</h2>
-          <p class="muted">Tap a color family to filter. Click any balm to add it to your bag.</p>
+          <h2>Shop the collection</h2>
+          <p class="muted">Filter by category. Click any item to pick your size and color.</p>
         </div>
-        <div class="filters" id="filters" role="group" aria-label="Filter by color"></div>
+        <div class="filters" id="filters" role="group" aria-label="Filter by category"></div>
       </div>
       <div class="grid" id="productGrid"></div>
     </section>
@@ -94,18 +93,18 @@
     <!-- About -->
     <section class="about" id="about">
       <div class="about-card">
-        <h2>Made to be worn (and re-worn).</h2>
+        <h2>Our promise to you.</h2>
         <p>
-          Every <strong>color</strong> balm starts with a base of shea butter,
-          jojoba, and vitamin E, then gets a buildable wash of pigment. One swipe
-          for a hint, three for full drama. It melts in, never cakes, and your
-          lips stay soft long after the color fades.
+          Every item in <strong>DRIP</strong> ships from a US warehouse — no
+          surprise customs fees, no Chinese text on the packaging, no 6-week
+          waits. We source from vetted suppliers with label removal so your
+          customer gets a clean, branded-feeling unboxing every time.
         </p>
         <ul class="perks">
-          <li><span>🌱</span> Vegan &amp; cruelty-free</li>
-          <li><span>💧</span> 8-hour hydration</li>
-          <li><span>🚫</span> No parabens or sulfates</li>
-          <li><span>♻️</span> Refillable tubes</li>
+          <li><span>🇺🇸</span> Ships from US warehouse</li>
+          <li><span>📦</span> No Chinese branding on packaging</li>
+          <li><span>⚡</span> 3–8 business day delivery</li>
+          <li><span>✅</span> Quality-checked before ship</li>
         </ul>
       </div>
     </section>
@@ -114,15 +113,15 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-top">
-      <div class="logo"><span class="logo-dot"></span>color</div>
-      <p class="muted">lip balm in every shade. made with love &amp; shea butter.</p>
+      <div class="logo"><span class="logo-dot"></span>DRIP</div>
+      <p class="muted">fashion &amp; beauty. ships fast, looks clean.</p>
     </div>
     <div class="footer-cols">
-      <div><h4>Shop</h4><a href="#shop">All shades</a><a href="#shop">Bestsellers</a><a href="#shop">Bundles</a></div>
+      <div><h4>Shop</h4><a href="#shop">Women's</a><a href="#shop">Men's</a><a href="#shop">Beauty</a></div>
       <div><h4>Help</h4><a href="#">Shipping</a><a href="#">Returns</a><a href="#">Contact</a></div>
-      <div><h4>Company</h4><a href="#about">About</a><a href="#">Sustainability</a><a href="#">Careers</a></div>
+      <div><h4>Company</h4><a href="#about">About</a><a href="#">Press</a><a href="#">Careers</a></div>
     </div>
-    <p class="copyright">© 2026 color. all shades reserved.</p>
+    <p class="copyright">© 2026 DRIP. all fits reserved.</p>
   </footer>
 
   <!-- Cart drawer -->
@@ -142,6 +141,21 @@
       <button class="btn btn-primary btn-full" id="checkoutBtn">Checkout</button>
     </div>
   </aside>
+
+  <!-- Variant picker modal -->
+  <div class="cart-overlay" id="pickerOverlay"></div>
+  <div class="picker-modal" id="picker" role="dialog" aria-label="Select options">
+    <div class="picker-header">
+      <h3 id="pickerTitle"></h3>
+      <button class="cart-close" id="pickerClose" aria-label="Close">&times;</button>
+    </div>
+    <div id="pickerColors"></div>
+    <div id="pickerSizes"></div>
+    <div class="picker-footer">
+      <span class="picker-price" id="pickerPrice"></span>
+      <button class="btn btn-primary" id="pickerAddBtn">Add to bag</button>
+    </div>
+  </div>
 
   <!-- Toast -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
