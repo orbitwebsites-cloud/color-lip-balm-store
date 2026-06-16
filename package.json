@@ -1,0 +1,13 @@
+{
+  "name": "color-lip-balm-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "color — lip balm in every shade. Static storefront with Stripe Checkout on Vercel.",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "stripe": "^17.7.0"
+  }
+}

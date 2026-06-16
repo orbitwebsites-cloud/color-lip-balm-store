@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order confirmed — color</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23ff5d8f'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <main class="success-wrap">
+    <div class="success-card">
+      <div class="confirm-check">✓</div>
+      <a href="/" class="logo"><span class="logo-dot"></span>color</a>
+      <h1>Thank you! 💕</h1>
+      <p class="success-sub">Your order is confirmed and your shades are on the way. A receipt is headed to your inbox.</p>
+      <p class="success-order" id="orderRef"></p>
+      <a href="/" class="btn btn-primary">Keep shopping</a>
+    </div>
+  </main>
+
+  <script>
+    // Payment succeeded — clear the saved cart.
+    try { localStorage.removeItem("color-cart"); } catch (e) {}
+    const sid = new URLSearchParams(location.search).get("session_id");
+    if (sid) {
+      document.getElementById("orderRef").textContent =
+        "Order reference: " + sid.slice(-10).toUpperCase();
+    }
+  </script>
+</body>
+</html>

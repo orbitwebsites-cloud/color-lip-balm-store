@@ -9,37 +9,66 @@ fictional tinted lip-balm brand called *color*.
 
 - **12 lip balm shades**, each named after its color (Rosewood, Coral Crush, Lavender, Cherry, Mint, Sky, Cocoa, Midnight…).
 - **Color-family filtering** — tap Pink / Red / Orange / Yellow / Green / Blue / Purple / Neutral to narrow the grid.
-- **A working cart** — add/remove, change quantities, free-shipping progress bar, and a demo checkout. Cart persists in `localStorage`.
+- **A working cart** — add/remove, change quantities, free-shipping progress bar. Cart persists in `localStorage`.
+- **Real checkout via Stripe** — a Vercel serverless function creates a [Stripe Checkout](https://stripe.com/docs/payments/checkout) session and redirects to Stripe's hosted, PCI-compliant payment page (card, Apple/Google Pay, shipping, email). Prices are validated server-side.
 - **Animated, responsive design** — floating balm hero, rainbow type, marquee, hover effects, mobile-friendly drawer.
-- **Zero dependencies, no build step.** Pure HTML, CSS, and vanilla JS.
+- **Storefront is pure HTML/CSS/vanilla JS.** The only dependency is `stripe` for the checkout function.
+
+## Stripe setup
+
+1. Create a Stripe account and grab your secret key from
+   [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys)
+   (use the **test** key, `sk_test_…`, while developing).
+2. Add it as an environment variable named `STRIPE_SECRET_KEY`:
+   - **Locally:** copy `.env.example` to `.env` and paste your key in.
+   - **On Vercel:** Project → Settings → Environment Variables → add `STRIPE_SECRET_KEY`.
+3. Test payments use card `4242 4242 4242 4242`, any future expiry, any CVC/ZIP.
 
 ## Run locally
 
-Just open `index.html` in a browser, or serve the folder:
+Static front end only (checkout button won't work without the function):
 
 ```bash
-python3 -m http.server 8000
-# then visit http://localhost:8000
+python3 -m http.server 8000   # visit http://localhost:8000
+```
+
+Full stack incl. the Stripe function:
+
+```bash
+npm install
+npx vercel dev                # serves the site + /api/checkout
 ```
 
 ## Deploy
 
-This is a static site, so it deploys anywhere. For Vercel:
-
 ```bash
-npm i -g vercel
-vercel --prod
+npx vercel --prod
 ```
 
-`vercel.json` is already included (clean URLs, no trailing slash).
+Make sure `STRIPE_SECRET_KEY` is set in the Vercel project. Vercel auto-detects
+the `api/` folder as serverless functions — no extra config needed.
 
 ## Project structure
 
 ```
-index.html   # markup: header, hero, shop, about, footer, cart drawer
-styles.css   # design tokens + all styling
-app.js       # product catalog, filtering, cart logic
-vercel.json  # static deploy config
+index.html       # storefront markup (header, hero, shop, cart drawer)
+success.html     # post-payment thank-you page
+styles.css       # design tokens + all styling
+app.js           # product catalog, filtering, cart, Stripe redirect
+api/checkout.js  # serverless fn: creates a Stripe Checkout session
+package.json     # stripe dependency + dev/deploy scripts
+vercel.json      # deploy config
+.env.example     # template for STRIPE_SECRET_KEY
+```
+
+## How checkout works
+
+```
+browser cart  ──POST /api/checkout──▶  serverless fn
+                                        ├─ looks up real prices (CATALOG)
+                                        ├─ creates Stripe Checkout Session
+                                        └─ returns session.url
+browser  ◀──redirect──  Stripe-hosted payment page  ──▶  success.html
 ```
 
 ---

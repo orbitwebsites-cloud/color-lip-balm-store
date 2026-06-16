@@ -179,14 +179,34 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-// --- Checkout (demo) ---
-function checkout() {
+// --- Checkout (Stripe) ---
+// Sends the cart to our serverless function, which creates a Stripe Checkout
+// Session and returns its hosted URL. We then redirect the customer to Stripe.
+async function checkout() {
   if (cartCount() === 0) { showToast("Your bag is empty!"); return; }
-  showToast(`Order placed! ${cartCount()} balm(s) on the way 💕`);
-  cart = {};
-  saveCart();
-  updateCartUI();
-  setTimeout(closeCart, 900);
+
+  const btn = $("#checkoutBtn");
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Taking you to checkout…";
+
+  try {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: cart }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.url) {
+      throw new Error(data.error || "Checkout is unavailable right now.");
+    }
+    window.location.href = data.url; // hand off to Stripe-hosted checkout
+  } catch (err) {
+    showToast(err.message);
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 }
 
 // --- Wire up ---
@@ -199,6 +219,12 @@ function init() {
   $("#cartOverlay").addEventListener("click", closeCart);
   $("#checkoutBtn").addEventListener("click", checkout);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeCart(); });
+
+  // If the customer came back from a cancelled Stripe checkout, let them know.
+  if (new URLSearchParams(location.search).get("canceled")) {
+    showToast("Checkout canceled — your bag is saved.");
+    history.replaceState({}, "", location.pathname);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
