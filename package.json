@@ -8,6 +8,10 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
+    "@coinbase/x402": "^2.1.0",
+    "@vercel/functions": "^3.9.11",
+    "@x402/core": "^2.28.0",
+    "@x402/evm": "^2.28.0",
     "stripe": "^17.7.0"
   }
 }

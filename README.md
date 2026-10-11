@@ -48,6 +48,24 @@ npx vercel --prod
 Make sure `STRIPE_SECRET_KEY` is set in the Vercel project. Vercel auto-detects
 the `api/` folder as serverless functions — no extra config needed.
 
+## x402 bot paywall
+
+Humans browse free. AI crawlers / scrapers (GPTBot, ClaudeBot, CCBot, PerplexityBot,
+`curl`, `python-requests`, HeadlessChrome, …) get **HTTP 402** with
+[x402](https://x402.org) payment requirements ($0.001 USDC on Base per request);
+if they pay, they get the page with a `PAYMENT-RESPONSE` settlement header.
+
+- `middleware.js` — Vercel Routing Middleware entry (Node runtime).
+- `x402/bot-paywall.js` — config, `BOT_UA_PATTERNS`, free-path rules, x402 server (`@x402/core` + `@x402/evm`).
+- Search engines / link unfurlers / uptime monitors (Googlebot, Bingbot, Applebot, Slackbot, Vercel, …) are never charged.
+- Never paywalled: `/api/*` (Stripe checkout + webhook), `/robots.txt`, `/sitemap*.xml`, `/favicon*`, `/llms.txt`, `/.well-known/*`, static assets.
+- Fails open: any error or facilitator outage serves the page normally.
+
+Env vars (see `.env.example`): `X402_ENABLED` (set `false` to disable), `X402_PAY_TO`, `X402_PRICE`,
+`X402_NETWORK` (default `eip155:8453`), `CDP_API_KEY_ID` + `CDP_API_KEY_SECRET` (Coinbase CDP facilitator —
+**required for Base mainnet**), or `X402_FACILITATOR_URL` (default `https://x402.org/facilitator`, testnet only).
+Without CDP keys on mainnet the paywall can't initialize and simply fails open (bots served free).
+
 ## Project structure
 
 ```
@@ -56,6 +74,8 @@ success.html     # post-payment thank-you page
 styles.css       # design tokens + all styling
 app.js           # product catalog, filtering, cart, Stripe redirect
 api/checkout.js  # serverless fn: creates a Stripe Checkout session
+middleware.js    # x402 bot paywall (Vercel Routing Middleware)
+x402/            # bot paywall logic
 package.json     # stripe dependency + dev/deploy scripts
 vercel.json      # deploy config
 .env.example     # template for STRIPE_SECRET_KEY
